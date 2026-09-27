@@ -6,137 +6,130 @@
 <title>Talha AI</title>
 
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-body{
-    font-family:Arial, sans-serif;
-    background:#0b1020;
-    color:white;
-    height:100vh;
+body {
+    font-family: Arial, sans-serif;
+    background: #0b1020;
+    color: white;
+    height: 100vh;
 }
 
-.app{
-    display:flex;
-    height:100vh;
+.app {
+    display: flex;
+    height: 100vh;
 }
 
-/* Sidebar */
-.sidebar{
-    width:250px;
-    background:#111827;
-    padding:20px;
-    border-right:1px solid #263044;
+.sidebar {
+    width: 250px;
+    background: #111827;
+    padding: 20px;
+    border-right: 1px solid #263044;
 }
 
-.logo{
-    font-size:25px;
-    font-weight:bold;
-    margin-bottom:30px;
+.logo {
+    font-size: 25px;
+    font-weight: bold;
+    margin-bottom: 30px;
 }
 
-.newchat{
-    width:100%;
-    padding:13px;
-    border:1px solid #374151;
-    border-radius:10px;
-    background:#1f2937;
-    color:white;
-    cursor:pointer;
-    font-size:15px;
+.newchat {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #374151;
+    border-radius: 10px;
+    background: #1f2937;
+    color: white;
+    cursor: pointer;
 }
 
-.newchat:hover{
-    background:#374151;
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Main */
-.main{
-    flex:1;
-    display:flex;
-    flex-direction:column;
+.header {
+    padding: 18px 25px;
+    border-bottom: 1px solid #263044;
+    font-size: 20px;
+    font-weight: bold;
 }
 
-.header{
-    padding:18px 25px;
-    border-bottom:1px solid #263044;
-    font-size:20px;
-    font-weight:bold;
+.chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
 }
 
-.chat{
-    flex:1;
-    overflow-y:auto;
-    padding:30px;
+.message {
+    max-width: 750px;
+    margin: 0 auto 20px;
+    padding: 15px 18px;
+    border-radius: 14px;
+    line-height: 1.6;
 }
 
-.message{
-    max-width:750px;
-    margin:0 auto 25px;
-    padding:16px 20px;
-    border-radius:14px;
-    line-height:1.6;
+.ai {
+    background: #172033;
 }
 
-.ai{
-    background:#172033;
+.user {
+    background: #2563eb;
 }
 
-.user{
-    background:#2563eb;
+.input-area {
+    padding: 20px;
+    border-top: 1px solid #263044;
 }
 
-.input-area{
-    padding:20px;
-    border-top:1px solid #263044;
+.input-box {
+    max-width: 800px;
+    margin: auto;
+    display: flex;
+    gap: 10px;
 }
 
-.input-box{
-    max-width:800px;
-    margin:auto;
-    display:flex;
-    gap:10px;
+input {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: white;
+    outline: none;
+    font-size: 16px;
 }
 
-input{
-    flex:1;
-    padding:15px;
-    border-radius:12px;
-    border:1px solid #374151;
-    background:#111827;
-    color:white;
-    outline:none;
-    font-size:16px;
+button {
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-button{
-    padding:15px 20px;
-    border:none;
-    border-radius:12px;
-    background:#2563eb;
-    color:white;
-    cursor:pointer;
-    font-weight:bold;
+button:hover {
+    background: #1d4ed8;
 }
 
-button:hover{
-    background:#1d4ed8;
-}
-
-@media(max-width:700px){
-    .sidebar{
-        display:none;
+@media (max-width: 700px) {
+    .sidebar {
+        display: none;
     }
 
-    .chat{
-        padding:15px;
+    .chat {
+        padding: 15px;
     }
 
-    .input-area{
-        padding:12px;
+    .input-area {
+        padding: 12px;
     }
 }
 </style>
@@ -164,7 +157,7 @@ button:hover{
 
             <div class="message ai">
                 👋 Hello! I am <b>Talha AI</b>.<br>
-                How can I help you today?
+                Ask me anything.
             </div>
 
         </div>
@@ -194,50 +187,89 @@ button:hover{
 
 <script>
 
-function sendMessage(){
+const WORKER_URL =
+"https://lingering-math-807atalha-ai.ziatalha2007.workers.dev/";
+
+async function sendMessage() {
 
     const input = document.getElementById("messageInput");
     const text = input.value.trim();
 
-    if(text === "") return;
+    if (!text) return;
 
     const chat = document.getElementById("chat");
 
     const userMessage = document.createElement("div");
     userMessage.className = "message user";
-    userMessage.innerHTML = text;
+    userMessage.textContent = text;
 
     chat.appendChild(userMessage);
 
     input.value = "";
 
-    setTimeout(() => {
+    const loading = document.createElement("div");
+    loading.className = "message ai";
+    loading.textContent = "🤔 Thinking...";
+    chat.appendChild(loading);
+
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+
+        const response = await fetch(WORKER_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                message: text
+            })
+
+        });
+
+        const data = await response.json();
+
+        loading.remove();
 
         const aiMessage = document.createElement("div");
         aiMessage.className = "message ai";
 
-        aiMessage.innerHTML =
-        "🤖 I received your message: <b>" +
-        text +
-        "</b><br><br>" +
-        "Real AI connection will be added next.";
+        if (data.answer) {
+            aiMessage.textContent = data.answer;
+        } else {
+            aiMessage.textContent =
+                "❌ Error: " + (data.error || "AI response nahi mila.");
+        }
 
         chat.appendChild(aiMessage);
 
-        chat.scrollTop = chat.scrollHeight;
+    } catch (error) {
 
-    },500);
+        loading.remove();
+
+        const errorMessage = document.createElement("div");
+        errorMessage.className = "message ai";
+        errorMessage.textContent =
+            "❌ Server se connection nahi ho saka.";
+
+        chat.appendChild(errorMessage);
+    }
+
+    chat.scrollTop = chat.scrollHeight;
 }
 
-function handleKey(event){
+function handleKey(event) {
 
-    if(event.key === "Enter"){
+    if (event.key === "Enter") {
         sendMessage();
     }
 
 }
 
-function newChat(){
+function newChat() {
 
     document.getElementById("chat").innerHTML = `
         <div class="message ai">
