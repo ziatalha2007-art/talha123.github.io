@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>AI Vision Scanner</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, #243b80 0%, transparent 35%),
+        radial-gradient(circle at bottom right, #511b70 0%, transparent 35%),
+        #080b18;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 25px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 28px;
+      padding: 35px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 70px;
+      height: 70px;
+      margin: auto;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      background: linear-gradient(135deg, #6c63ff, #b24cff);
+      box-shadow: 0 10px 35px rgba(108, 99, 255, 0.4);
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: 34px;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: #b9bfd8;
+      font-size: 15px;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.20);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px;
+      padding: 22px;
+    }
+
+    .camera-title,
+    .result-title {
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    #webcam-container {
+      width: 100%;
+      min-height: 300px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #05070f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #webcam-container canvas {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100%;
+      display: block;
+    }
+
+    .placeholder {
+      text-align: center;
+      color: #858ba5;
+      padding: 50px 20px;
+    }
+
+    .placeholder-icon {
+      font-size: 45px;
+      margin-bottom: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      flex: 1;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 13px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    #startBtn {
+      background: linear-gradient(135deg, #6c63ff, #a548ff);
+      color: white;
+    }
+
+    #stopBtn {
+      background: rgba(255,255,255,0.10);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #aeb5d1;
+    }
+
+    #label-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .prediction {
+      background: rgba(255,255,255,0.06);
+      border-radius: 13px;
+      padding: 13px;
+    }
+
+    .prediction-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .class-name {
+      font-weight: bold;
+    }
+
+    .percentage {
+      color: #b7a8ff;
+      font-weight: bold;
+    }
+
+    .bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #6c63ff, #c04cff);
+      transition: width 0.25s ease;
+    }
+
+    .best-result {
+      margin-top: 20px;
+      padding: 18px;
+      text-align: center;
+      border-radius: 16px;
+      background: linear-gradient(
+        135deg,
+        rgba(108,99,255,0.18),
+        rgba(180,76,255,0.12)
+      );
+      border: 1px solid rgba(150,120,255,0.2);
+    }
+
+    .best-label {
+      font-size: 12px;
+      color: #aeb5d1;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #bestPrediction {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 7px;
+    }
+
+    footer {
+      text-align: center;
+      color: #707792;
+      font-size: 12px;
+      margin-top: 25px;
+    }
+
+    @media (max-width: 750px) {
+      .container {
+        padding: 20px;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="header">
+      <div class="logo">🤖</div>
+
+      <h1>AI Vision Scanner</h1>
+
+      <p class="subtitle">
+        Real-time image recognition powered by Teachable Machine
+      </p>
+    </div>
+
+    <div class="main">
+
+      <!-- CAMERA -->
+      <div class="card">
+
+        <div class="camera-title">
+          📷 Camera
+        </div>
+
+        <div id="webcam-container">
+
+          <div class="placeholder" id="placeholder">
+            <div class="placeholder-icon">📸</div>
+            <p>Click Start Camera to begin</p>
+          </div>
+
+        </div>
+
+        <div class="buttons">
+
+          <button id="startBtn" onclick="init()">
+            ▶ Start Camera
+          </button>
+
+          <button id="stopBtn" onclick="stopCamera()" disabled>
+            ■ Stop
+          </button>
+
+        </div>
+
+        <div class="status" id="status">
+          Camera is not running
+        </div>
+
+      </div>
+
+
+      <!-- RESULTS -->
+      <div class="card">
+
+        <div class="result-title">
+          🧠 AI Predictions
+        </div>
+
+        <div id="label-container">
+
+          <div class="placeholder">
+            <div class="placeholder-icon">🔍</div>
+            <p>Predictions will appear here</p>
+          </div>
+
+        </div>
+
+        <div class="best-result">
+
+          <div class="best-label">
+            Most Likely Result
+          </div>
+
+          <div id="bestPrediction">
+            Waiting...
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <footer>
+      AI Vision Scanner • Powered by Teachable Machine
+    </footer>
+
+  </div>
+
+
+<script>
+
+  // Your Teachable Machine model
+  const URL =
+    "https://teachablemachine.withgoogle.com/models/loHV12qTQ/";
+
+  let model;
+  let webcam;
+  let labelContainer;
+  let maxPredictions;
+  let running = false;
+
+
+  // Start camera
+  async function init() {
+
+    try {
+
+      document.getElementById("status").innerText =
+        "Loading AI model...";
+
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(
+        modelURL,
+        metadataURL
+      );
+
+      maxPredictions = model.getTotalClasses();
+
+      const flip = true;
+
+      webcam = new tmImage.Webcam(
+        400,
+        400,
+        flip
+      );
+
+      await webcam.setup();
+      await webcam.play();
+
+      running = true;
+
+      document.getElementById("placeholder").style.display =
+        "none";
+
+      document.getElementById("startBtn").disabled = true;
+
+      document.getElementById("stopBtn").disabled = false;
+
+      document.getElementById("status").innerText =
+        "🟢 Camera is running";
+
+      const container =
+        document.getElementById("webcam-container");
+
+      container.appendChild(webcam.canvas);
+
+      labelContainer =
+        document.getElementById("label-container");
+
+      labelContainer.innerHTML = "";
+
+      for (
+        let i = 0;
+        i < maxPredictions;
+        i++
+      ) {
+
+        const predictionBox =
+          document.createElement("div");
+
+        predictionBox.className =
+          "prediction";
+
+        predictionBox.innerHTML = `
+          <div class="prediction-top">
+            <span class="class-name">
+              Loading...
+            </span>
+
+            <span class="percentage">
+              0%
+            </span>
+          </div>
+
+          <div class="bar">
+            <div class="bar-fill"></div>
+          </div>
+        `;
+
+        labelContainer.appendChild(
+          predictionBox
+        );
+      }
+
+      window.requestAnimationFrame(loop);
+
+    } catch (error) {
+
+      console.error(error);
+
+      document.getElementById("status").innerText =
+        "❌ Camera permission or model error";
+
+      alert(
+        "Camera start nahi ho saka. Browser mein camera permission Allow karein."
+      );
+
+    }
+
+  }
+
+
+  // Main loop
+  async function loop() {
+
+    if (!running) return;
+
+    webcam.update();
+
+    await predict();
+
+    window.requestAnimationFrame(loop);
+
+  }
+
+
+  // AI prediction
+  async function predict() {
+
+    const prediction =
+      await model.predict(webcam.canvas);
+
+    let bestClass = "";
+    let bestProbability = 0;
+
+    for (
+      let i = 0;
+      i < maxPredictions;
+      i++
+    ) {
+
+      const probability =
+        prediction[i].probability;
+
+      const className =
+        prediction[i].className;
+
+      const percentage =
+        (probability * 100).toFixed(1);
+
+      const box =
+        labelContainer.children[i];
+
+      box.querySelector(
+        ".class-name"
+      ).innerText = className;
+
+      box.querySelector(
+        ".percentage"
+      ).innerText = percentage + "%";
+
+      box.querySelector(
+        ".bar-fill"
+      ).style.width = percentage + "%";
+
+
+      // Find highest prediction
+      if (
+        probability > bestProbability
+      ) {
+
+        bestProbability =
+          probability;
+
+        bestClass =
+          className;
+
+      }
+
+    }
+
+
+    document.getElementById(
+      "bestPrediction"
+    ).innerText =
+      bestClass +
+      " • " +
+      (bestProbability * 100).toFixed(1) +
+      "%";
+
+  }
+
+
+  // Stop camera
+  function stopCamera() {
+
+    running = false;
+
+    if (webcam) {
+
+      webcam.stop();
+
+      const canvas =
+        document.querySelector(
+          "#webcam-container canvas"
+        );
+
+      if (canvas) {
+        canvas.remove();
+      }
+
+    }
+
+    document.getElementById(
+      "placeholder"
+    ).style.display = "block";
+
+    document.getElementById(
+      "startBtn"
+    ).disabled = false;
+
+    document.getElementById(
+      "stopBtn"
+    ).disabled = true;
+
+    document.getElementById(
+      "status"
+    ).innerText =
+      "Camera is not running";
+
+    document.getElementById(
+      "bestPrediction"
+    ).innerText =
+      "Waiting...";
+
+  }
+
+</script>
+
+</body>
+</html>
