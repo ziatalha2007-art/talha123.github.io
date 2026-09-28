@@ -246,16 +246,20 @@ async function sendMessage() {
 
         chat.appendChild(aiMessage);
 
-    } catch (error) {
+} catch (error) {
 
-        loading.remove();
+    loading.remove();
 
-        const errorMessage = document.createElement("div");
-        errorMessage.className = "message ai";
-        errorMessage.textContent =
-            "❌ Server se connection nahi ho saka.";
+    const errorMessage = document.createElement("div");
+    errorMessage.className = "message ai";
 
-        chat.appendChild(errorMessage);
+    errorMessage.textContent =
+        "❌ Error: " + error.message;
+
+    chat.appendChild(errorMessage);
+
+    console.error("Worker Error:", error);
+}
     }
 
     chat.scrollTop = chat.scrollHeight;
