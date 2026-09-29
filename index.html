@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,6 +73,7 @@ body {
     padding: 15px 18px;
     border-radius: 14px;
     line-height: 1.6;
+    white-space: pre-wrap;
 }
 
 .ai {
@@ -140,11 +142,15 @@ button:hover {
 <div class="app">
 
     <aside class="sidebar">
-        <div class="logo">🤖 Talha AI</div>
+
+        <div class="logo">
+            🤖 Talha AI
+        </div>
 
         <button class="newchat" onclick="newChat()">
             ＋ New Chat
         </button>
+
     </aside>
 
     <main class="main">
@@ -156,7 +162,8 @@ button:hover {
         <div class="chat" id="chat">
 
             <div class="message ai">
-                👋 Hello! I am <b>Talha AI</b>.<br>
+                👋 Hello! I am Talha AI.
+                <br>
                 Ask me anything.
             </div>
 
@@ -195,7 +202,9 @@ async function sendMessage() {
     const input = document.getElementById("messageInput");
     const text = input.value.trim();
 
-    if (!text) return;
+    if (!text) {
+        return;
+    }
 
     const chat = document.getElementById("chat");
 
@@ -210,6 +219,7 @@ async function sendMessage() {
     const loading = document.createElement("div");
     loading.className = "message ai";
     loading.textContent = "🤔 Thinking...";
+
     chat.appendChild(loading);
 
     chat.scrollTop = chat.scrollHeight;
@@ -238,31 +248,39 @@ async function sendMessage() {
         aiMessage.className = "message ai";
 
         if (data.answer) {
+
             aiMessage.textContent = data.answer;
+
         } else {
+
             aiMessage.textContent =
-                "❌ Error: " + (data.error || "AI response nahi mila.");
+                "❌ Error: " +
+                (data.error || "AI response nahi mila.");
+
         }
 
         chat.appendChild(aiMessage);
 
-} catch (error) {
+        chat.scrollTop = chat.scrollHeight;
 
-    loading.remove();
+    } catch (error) {
 
-    const errorMessage = document.createElement("div");
-    errorMessage.className = "message ai";
+        loading.remove();
 
-    errorMessage.textContent =
-        "❌ Error: " + error.message;
+        const errorMessage = document.createElement("div");
+        errorMessage.className = "message ai";
 
-    chat.appendChild(errorMessage);
+        errorMessage.textContent =
+            "❌ Error: " + error.message;
 
-    console.error("Worker Error:", error);
-}
+        chat.appendChild(errorMessage);
+
+        chat.scrollTop = chat.scrollHeight;
+
+        console.error("Worker Error:", error);
+
     }
 
-    chat.scrollTop = chat.scrollHeight;
 }
 
 function handleKey(event) {
@@ -277,7 +295,8 @@ function newChat() {
 
     document.getElementById("chat").innerHTML = `
         <div class="message ai">
-            👋 New chat started!<br>
+            👋 New chat started!
+            <br>
             How can I help you?
         </div>
     `;
@@ -287,4 +306,5 @@ function newChat() {
 </script>
 
 </body>
-</html> \
+</html>
+```
